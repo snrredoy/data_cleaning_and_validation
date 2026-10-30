@@ -3,11 +3,11 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.readers import read_input
+from src.readers import read_input, read_excel_sheets
 from src.rules import load_rules
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-INPUT_FILE = BASE_DIR / "data" / "raw" / "customers.csv"
+INPUT_FILE = BASE_DIR / "data" / "raw" / "customers_multi_sheet.xlsx"
 OUTPUT_DIR = BASE_DIR / "output"
 
 rules = load_rules()
@@ -70,10 +70,25 @@ def validate_data(df: pd.DataFrame, rules: dict) -> pd.Series:
 
     return errors
 
+def load_input_data(file_path: Path) -> pd.DataFrame:
+    if file_path.suffix.lower() == ".xlsx":
+        sheets = read_excel_sheets(file_path)
+
+        frames = [
+            sheet.assign(source_sheet=sheet_name)
+            for sheet_name, sheet in sheets.items()
+        ]
+
+        return pd.concat(frames, ignore_index=True)
+
+    df = read_input(file_path)
+    df["source_sheet"] = "CSV"
+    return df
+
 
 def main():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    df = read_input(INPUT_FILE)
+    df = load_input_data(INPUT_FILE)
 
     df = clean_column_names(df)
 
