@@ -2,9 +2,10 @@ from pathlib import Path
 
 import pandas as pd
 
+
 def read_input(
-        file_path: Path | str,
-        sheet_name: str | int = 0,
+    file_path: Path | str,
+    sheet_name: str | int = 0,
 ) -> pd.DataFrame:
     path = Path(file_path)
 

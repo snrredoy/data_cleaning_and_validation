@@ -1,9 +1,10 @@
 import re
 from pathlib import Path
-from src.readers import read_input
-from src.rules import load_rules
 
 import pandas as pd
+
+from src.readers import read_input
+from src.rules import load_rules
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 INPUT_FILE = BASE_DIR / "data" / "raw" / "customers.csv"
@@ -22,15 +23,8 @@ EMAIL_PATTERN = re.compile(
 
 
 def clean_column_names(df: pd.DataFrame) -> pd.DataFrame:
-    df.columns = (
-        df.columns.astype(str)
-        .str.strip()
-        .str.lower()
-        .str.replace(r"\s+", "_", regex=True)
-    )
+    df.columns = df.columns.astype(str).str.strip().str.lower().str.replace(r"\s+", "_", regex=True)
     return df
-
-
 
 
 def clean_text(df: pd.DataFrame, normalize: dict[str, bool]) -> pd.DataFrame:
@@ -38,9 +32,7 @@ def clean_text(df: pd.DataFrame, normalize: dict[str, bool]) -> pd.DataFrame:
 
     if normalize.get("trim_whitespace", True):
         for col in df.select_dtypes(include=["object", "string"]).columns:
-            df[col] = df[col].map(
-                lambda value: value.strip() if isinstance(value, str) else value
-            )
+            df[col] = df[col].map(lambda value: value.strip() if isinstance(value, str) else value)
 
     if normalize.get("lowercase_email", True):
         if "email" in df.columns:
@@ -53,25 +45,28 @@ def clean_text(df: pd.DataFrame, normalize: dict[str, bool]) -> pd.DataFrame:
     return df
 
 
-def validate_data(df: pd.DataFrame) -> pd.Series:
+def validate_data(df: pd.DataFrame, rules: dict) -> pd.Series:
     errors = pd.Series("", index=df.index, dtype="string")
 
     def add_error(mask, message):
         mask = mask.fillna(False)
-        errors.loc[mask] = errors.loc[mask].apply(
-            lambda old: f"{old}; {message}" if old else message
-        )
+        errors.loc[mask] = errors.loc[mask].apply(lambda old: f"{old}; {message}" if old else message)
 
     for col in REQUIRED_COLUMNS:
         missing = df[col].isna() | df[col].eq("")
         add_error(missing, f"Missing value in '{col}'")
 
-    valid_ids = df["customer_id"].notna() & df["customer_id"].ne("")
-    duplicate_ids = valid_ids & df["customer_id"].duplicated(keep=False)
-    add_error(duplicate_ids, "Duplicate customer ID")
+    for col in UNIQUE_COLUMNS:
+        values = df[col]
 
-    email_ok = df["email"].str.fullmatch(EMAIL_PATTERN, na=False)
-    add_error(~email_ok, "Invalid email format")
+        non_empty = values.notna() & values.ne("")
+        duplicates = non_empty & values.duplicated(keep=False)
+        add_error(duplicates, f"Duplicate value in '{col}'")
+
+    if rules.get("email_validation", True):
+        if "email" in df.columns:
+            email_ok = df["email"].str.fullmatch(EMAIL_PATTERN, na=False)
+            add_error(~email_ok, "Invalid email format")
 
     return errors
 
@@ -91,15 +86,13 @@ def main():
 
     df = clean_text(df, normalize=NORMALIZE)
 
-    df["validation_errors"] = validate_data(df)
+    df["validation_errors"] = validate_data(df, rules)
 
     valid_mask = df["validation_errors"].eq("")
     valid_records = df.loc[valid_mask].copy()
     rejected_records = df.loc[~valid_mask].copy()
 
-    valid_records.drop(columns=["validation_errors"]).to_csv(
-        OUTPUT_DIR / "valid_customers.csv", index=False
-    )
+    valid_records.drop(columns=["validation_errors"]).to_csv(OUTPUT_DIR / "valid_customers.csv", index=False)
 
     rejected_records.to_csv(OUTPUT_DIR / "rejected_customers.csv", index=False)
 
