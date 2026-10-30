@@ -1,5 +1,7 @@
 import re
 from pathlib import Path
+from src.readers import read_input
+from src.rules import load_rules
 
 import pandas as pd
 
@@ -7,7 +9,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 INPUT_FILE = BASE_DIR / "data" / "raw" / "customers.csv"
 OUTPUT_DIR = BASE_DIR / "output"
 
-REQUIRED_COLUMNS = {"customer_id", "name", "email", "city"}
+rules = load_rules()
+REQUIRED_COLUMNS = set(rules["required_columns"])
+UNIQUE_COLUMNS = set(rules["unique_columns"])
+NORMALIZE = rules["normalize"]
 
 EMAIL_PATTERN = re.compile(
     r"^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@"
@@ -26,14 +31,24 @@ def clean_column_names(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def clean_text(df: pd.DataFrame) -> pd.DataFrame:
-    for col in df.select_dtypes(include=["object", "string"]):
-        df[col] = df[col].map(
-            lambda value: value.strip() if isinstance(value, str) else value
-        )
 
-    df["email"] = df["email"].str.lower()
-    df["customer_id"] = df["customer_id"].str.upper()
+
+def clean_text(df: pd.DataFrame, normalize: dict[str, bool]) -> pd.DataFrame:
+    df = df.copy()
+
+    if normalize.get("trim_whitespace", True):
+        for col in df.select_dtypes(include=["object", "string"]).columns:
+            df[col] = df[col].map(
+                lambda value: value.strip() if isinstance(value, str) else value
+            )
+
+    if normalize.get("lowercase_email", True):
+        if "email" in df.columns:
+            df["email"] = df["email"].str.lower()
+
+    if normalize.get("uppercase_customer_id", True):
+        if "customer_id" in df.columns:
+            df["customer_id"] = df["customer_id"].str.upper()
 
     return df
 
@@ -63,7 +78,7 @@ def validate_data(df: pd.DataFrame) -> pd.Series:
 
 def main():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    df = pd.read_csv(INPUT_FILE, dtype=str)
+    df = read_input(INPUT_FILE)
 
     df = clean_column_names(df)
 
@@ -74,7 +89,7 @@ def main():
     df = df.reset_index(drop=True)
     df.insert(0, "source_row", range(2, len(df) + 2))
 
-    df = clean_text(df)
+    df = clean_text(df, normalize=NORMALIZE)
 
     df["validation_errors"] = validate_data(df)
 
