@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.readers import read_input, read_excel_sheets
+from src.readers import read_excel_sheets, read_input
 from src.rules import load_rules
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -70,14 +70,12 @@ def validate_data(df: pd.DataFrame, rules: dict) -> pd.Series:
 
     return errors
 
+
 def load_input_data(file_path: Path) -> pd.DataFrame:
     if file_path.suffix.lower() == ".xlsx":
         sheets = read_excel_sheets(file_path)
 
-        frames = [
-            sheet.assign(source_sheet=sheet_name)
-            for sheet_name, sheet in sheets.items()
-        ]
+        frames = [sheet.assign(source_sheet=sheet_name) for sheet_name, sheet in sheets.items()]
 
         return pd.concat(frames, ignore_index=True)
 
