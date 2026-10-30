@@ -1,0 +1,10 @@
+customer_id,name,email,city
+C101,Rahim Hasan,rahim@example.com,Dhaka
+C102,Karim Ahmed,karim@example.com,Chittagong
+C103,Riya Akter,riya@example.com,Dhaka
+C201,Nusrat Jahan,nusrat@example.com,Dhaka
+C202,Sabbir Hossain,sabbir@example.com,Dhaka
+C204,Tanvir Ahmed,tanvir@example.com,Barisal
+C301,Mim Akter,mim@example.com,Rajshahi
+C302,Hasan Mahmud,hasan@example.com,Sylhet
+C999,Unknown Customer,unknown@example.com,Dhaka
