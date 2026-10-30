@@ -10,6 +10,7 @@ requires-python = ">=3.14"
 dependencies = [
     "openpyxl>=3.1.5",
     "pandas>=3.1.0",
+    "pydantic>=2.14.2",
 ]
 
 [project.scripts]
@@ -18,3 +19,22 @@ data-cleaning-and-validation-automation = "data_cleaning_and_validation_automati
 [build-system]
 requires = ["uv_build>=0.13.6,<0.14.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17.3",
+]
+
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # Pyflakes
+    "I",    # Import sorting
+    "UP",   # Pyupgrade
+    "B",    # Bugbear
+]

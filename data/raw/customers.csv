@@ -1,0 +1,8 @@
+customer_id,name,email,city
+C101, Rahim Hasan ,rahim@example.com,Dhaka
+C102,Karim Ahmed,karim@example.com,Chittagong
+C103,Riya Akter,invalid-email,Dhaka
+C104,Nahid Islam,nahid@example.com,
+C105,Sadia Khan,sadia@example.com,Khulna
+C105,Sadia Khan,sadia@example.com,Khulna
+C106,  Fahim Rahman  ,fahim@example.com,Dhaka
