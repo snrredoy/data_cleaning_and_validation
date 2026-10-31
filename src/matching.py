@@ -8,6 +8,8 @@ def cross_match(
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     source_df = source_df.copy()
     reference_df = reference_df.copy()
+    source_key = source_df[key]
+    reference_key = reference_df[key]
 
     source_df[key] = source_df[key].astype("string").str.strip().str.upper()
     reference_df[key] = reference_df[key].astype("string").str.strip().str.upper()
@@ -15,8 +17,13 @@ def cross_match(
     if key not in source_df.columns or key not in reference_df.columns:
         raise ValueError(f"Both datasets must contain '{key}'")
 
-    if source_df[key].isna().any() or reference_df[key].isna().any():
-        raise ValueError(f"'{key}' cannot contain missing values")
+    if (
+        source_key.isna().any()
+        or source_key.eq("").any()
+        or reference_key.isna().any()
+        or reference_key.eq("").any()
+    ):
+        raise ValueError(f"'{key}' cannot contain missing values or blank values")
 
     if source_df[key].duplicated().any():
         raise ValueError(f"Duplicate '{key}' values found in source dataset")
